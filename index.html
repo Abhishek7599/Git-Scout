@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitScout | GitHub Explorer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            bg: '#0f172a',
+                            card: '#1e293b',
+                            border: '#334155'
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-out forwards',
+                        'slide-up': 'slideUp 0.4s ease-out forwards',
+                        'bounce-slow': 'bounce 3s infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+</head>
+<body class="bg-slate-50 text-slate-900 dark:bg-dark-bg dark:text-slate-100 font-sans min-h-screen">
+
+    <!-- Header -->
+    <header class="bg-white/80 dark:bg-dark-card/80 backdrop-blur-md border-b dark:border-dark-border sticky top-0 z-40 transition-all duration-300">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-start">
+                <div class="flex items-center gap-2 cursor-pointer group" onclick="goHome()">
+                    <div class="bg-slate-900 dark:bg-blue-600 text-white p-2 rounded-xl group-hover:rotate-12 transition-all duration-300">
+                        <i class="fab fa-github text-2xl"></i>
+                    </div>
+                    <h1 class="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400">GitScout</h1>
+                </div>
+                
+                <button id="themeToggle" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:scale-110 active:scale-95 transition-all shadow-inner">
+                    <i class="fas fa-moon dark:hidden"></i>
+                    <i class="fas fa-sun hidden dark:block text-yellow-400"></i>
+                </button>
+            </div>
+            
+            <form id="searchForm" class="relative w-full sm:w-96 group">
+                <input 
+                    type="text" 
+                    id="usernameInput" 
+                    placeholder="Search GitHub username..." 
+                    class="w-full pl-11 pr-4 py-2.5 border border-slate-200 dark:border-dark-border rounded-2xl bg-slate-50 dark:bg-slate-800/50 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-4 focus:ring-blue-500/20 shadow-sm transition-all dark:text-white"
+                    required
+                >
+                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors"></i>
+                <button type="submit" id="searchBtn" class="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 text-white px-4 py-1.5 rounded-xl text-sm font-bold hover:bg-blue-700 active:scale-95 transition-all disabled:opacity-50">
+                    Explore
+                </button>
+            </form>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 py-8">
+        
+        <!-- Status Container -->
+        <div id="statusContainer" class="flex flex-col items-center justify-center py-12 text-center animate-fade-in">
+            <div id="loadingState" class="hidden py-20">
+                <div class="loader ease-linear rounded-full border-4 border-t-4 border-slate-200 dark:border-slate-700 h-14 w-14 mb-6 mx-auto"></div>
+                <p class="text-slate-500 dark:text-slate-400 font-bold tracking-wide animate-pulse">SYNCING WITH GITHUB...</p>
+            </div>
+
+            <div id="errorState" class="hidden py-20 animate-slide-up">
+                <div class="text-red-500 text-6xl mb-4"><i class="fas fa-ghost"></i></div>
+                <h2 id="errorMessage" class="text-2xl font-black text-slate-800 dark:text-slate-200 mb-2">User Not Found</h2>
+                <button onclick="goHome()" class="text-blue-600 dark:text-blue-400 font-bold hover:translate-x-[-4px] transition-transform mt-6 flex items-center gap-2 mx-auto">
+                    <i class="fas fa-arrow-left"></i> Back to Home
+                </button>
+            </div>
+
+            <div id="emptyState" class="block w-full">
+                <section class="mb-16">
+                    <h2 class="text-5xl md:text-7xl font-black mb-8 tracking-tighter leading-none">
+                        Pulse of <span class="text-blue-600 dark:text-blue-400 italic">Code.</span>
+                    </h2>
+                    <p class="text-xl text-slate-500 dark:text-slate-400 max-w-2xl mx-auto mb-12 font-medium">
+                        The minimalist explorer for developers. High-fidelity stats, repository tracking, and contribution insights.
+                    </p>
+                    
+                    <div id="recentSearches" class="flex flex-wrap justify-center items-center gap-4 mb-16 hidden animate-fade-in">
+                        <!-- History injected here -->
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div class="group bg-white dark:bg-dark-card p-8 rounded-[2rem] border border-slate-100 dark:border-dark-border shadow-xl shadow-slate-200/50 dark:shadow-none text-center hover:border-blue-500 transition-all duration-500">
+                            <div class="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 text-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all">
+                                <i class="fas fa-bolt text-xl"></i>
+                            </div>
+                            <h3 class="font-bold text-lg mb-2">Real-time</h3>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">Instant filtering and sorting without page reloads.</p>
+                        </div>
+                        <div class="group bg-white dark:bg-dark-card p-8 rounded-[2rem] border border-slate-100 dark:border-dark-border shadow-xl shadow-slate-200/50 dark:shadow-none text-center hover:border-indigo-500 transition-all duration-500">
+                            <div class="w-12 h-12 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 group-hover:-rotate-3 transition-all">
+                                <i class="fas fa-magic text-xl"></i>
+                            </div>
+                            <h3 class="font-bold text-lg mb-2">Fluid UI</h3>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">Adaptive layouts with smooth motion and haptic-like feel.</p>
+                        </div>
+                        <div class="group bg-white dark:bg-dark-card p-8 rounded-[2rem] border border-slate-100 dark:border-dark-border shadow-xl shadow-slate-200/50 dark:shadow-none text-center hover:border-emerald-500 transition-all duration-500">
+                            <div class="w-12 h-12 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all">
+                                <i class="fas fa-shield-halved text-xl"></i>
+                            </div>
+                            <h3 class="font-bold text-lg mb-2">Persistent</h3>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">Your preferences and history stay with you locally.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="bg-slate-200/30 dark:bg-slate-800/30 p-10 rounded-[3rem] border border-slate-200/60 dark:border-dark-border backdrop-blur-sm">
+                    <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-8 text-center">Global Leaders</h4>
+                    <div class="flex flex-wrap justify-center gap-4" id="suggestedList"></div>
+                </section>
+            </div>
+        </div>
+
+        <!-- Profile Detail View -->
+        <div id="profileView" class="hidden">
+            <div class="mb-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 animate-fade-in">
+                <button onclick="goHome()" class="group flex items-center gap-3 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 font-bold transition-all">
+                    <div class="w-8 h-8 rounded-full bg-white dark:bg-dark-card border dark:border-dark-border flex items-center justify-center group-hover:-translate-x-1 transition-transform">
+                        <i class="fas fa-chevron-left text-xs"></i>
+                    </div>
+                    <span>Back to Discovery</span>
+                </button>
+                
+                <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                    <!-- Custom Styled Repo Sort -->
+                    <div class="relative flex items-center bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl shadow-sm px-4 py-2 group hover:border-blue-500 transition-all flex-1 md:flex-none">
+                        <i class="fas fa-sort-amount-down text-slate-400 mr-2 text-xs"></i>
+                        <select id="repoSort" class="custom-select w-full md:w-28 text-sm font-bold text-slate-700 dark:text-slate-200 bg-transparent outline-none cursor-pointer pr-6">
+                            <option value="updated">Recent</option>
+                            <option value="stars">Stars</option>
+                            <option value="name">Name</option>
+                        </select>
+                    </div>
+
+                    <!-- Custom Styled Repo Filter -->
+                    <div class="relative flex items-center bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl shadow-sm px-4 py-2 group focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all flex-1 md:flex-none">
+                        <i class="fas fa-filter text-slate-400 mr-2 text-xs"></i>
+                        <input type="text" id="repoFilter" placeholder="Filter projects..." class="w-full md:w-40 text-sm font-bold text-slate-700 dark:text-slate-200 bg-transparent outline-none placeholder:text-slate-400">
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                <!-- Sidebar -->
+                <aside class="lg:col-span-4 space-y-6 animate-slide-up">
+                    <div class="bg-white dark:bg-dark-card p-8 rounded-[2.5rem] shadow-2xl shadow-slate-200/60 dark:shadow-none border border-slate-100 dark:border-dark-border transition-all">
+                        <div class="relative mb-8 group flex justify-center">
+                            <div class="w-full aspect-square max-w-[280px] overflow-hidden rounded-full border-8 border-slate-50 dark:border-slate-800 shadow-xl group-hover:scale-[1.02] transition-transform duration-500">
+                                <img id="userAvatar" src="" class="w-full h-full object-cover">
+                            </div>
+                            <div class="absolute bottom-2 right-[10%] bg-blue-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg animate-bounce-slow border-4 border-white dark:border-dark-card z-10">
+                                <i class="fas fa-code text-xl"></i>
+                            </div>
+                        </div>
+                        
+                        <h2 id="userName" class="text-3xl font-black tracking-tight mb-1"></h2>
+                        <p id="userLogin" class="text-blue-600 dark:text-blue-400 font-bold mb-4 flex items-center gap-2">
+                            <span></span>
+                            <i class="fas fa-check-circle text-xs"></i>
+                        </p>
+                        <p id="userBio" class="text-slate-500 dark:text-slate-400 mb-8 text-sm leading-relaxed italic"></p>
+                        
+                        <div class="grid grid-cols-2 gap-6 border-t dark:border-dark-border pt-8 mb-8">
+                            <div>
+                                <span id="userFollowers" class="block text-2xl font-black"></span>
+                                <span class="text-[9px] uppercase tracking-widest text-slate-400 font-black">Followers</span>
+                            </div>
+                            <div>
+                                <span id="userFollowing" class="block text-2xl font-black"></span>
+                                <span class="text-[9px] uppercase tracking-widest text-slate-400 font-black">Following</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50 dark:bg-slate-800/40 p-5 rounded-2xl border border-slate-100 dark:border-dark-border">
+                            <div class="flex justify-between items-center mb-4">
+                                <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Contributions</h4>
+                                <span class="text-[9px] font-bold text-emerald-500 px-2 py-0.5 bg-emerald-50 dark:bg-emerald-900/20 rounded-full">ACTIVE</span>
+                            </div>
+                            <div class="contribution-grid" id="contributionGrid"></div>
+                        </div>
+                    </div>
+
+                    <div class="group bg-slate-900 dark:bg-blue-600 text-white p-8 rounded-[2rem] shadow-xl overflow-hidden relative">
+                        <div class="relative z-10">
+                            <div class="flex items-center justify-between mb-2 opacity-50 text-[10px] font-black uppercase tracking-[0.2em]">
+                                <span>Code Arsenal</span>
+                                <i class="fas fa-cube group-hover:rotate-180 transition-transform duration-700"></i>
+                            </div>
+                            <div class="flex items-baseline gap-2">
+                                <div id="userRepoCount" class="text-5xl font-black tracking-tighter"></div>
+                                <span class="text-sm font-bold opacity-60">Repos</span>
+                            </div>
+                        </div>
+                        <div class="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
+                    </div>
+                </aside>
+
+                <!-- Repo Feed -->
+                <section class="lg:col-span-8 animate-slide-up" style="animation-delay: 0.1s;">
+                    <div id="repoList" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+                    <div id="noReposState" class="hidden bg-white dark:bg-dark-card p-20 rounded-[3rem] border-4 border-dashed border-slate-100 dark:border-dark-border text-center transition-all">
+                        <i class="fas fa-search-minus text-3xl text-slate-300 mb-6 block"></i>
+                        <p class="text-slate-500 dark:text-slate-400 font-bold text-lg">Empty Commit History</p>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal -->
+    <div id="repoModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div id="modalOverlay" class="absolute inset-0 bg-slate-900/80 backdrop-blur-md opacity-0 transition-opacity duration-300" onclick="hideModal()"></div>
+        <div class="relative bg-white dark:bg-dark-card w-full max-w-xl rounded-[3rem] shadow-2xl overflow-hidden transform scale-90 opacity-0 transition-all duration-300 p-10 dark:border dark:border-dark-border">
+            <div class="flex justify-between items-start mb-8">
+                <div id="modalLang" class="bg-blue-600 text-white px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20"></div>
+                <button onclick="hideModal()" class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all flex items-center justify-center">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+            <h2 id="modalName" class="text-4xl font-black mb-4 tracking-tight leading-tight"></h2>
+            <p id="modalDesc" class="text-slate-600 dark:text-slate-400 mb-10 text-lg leading-relaxed"></p>
+            <div class="grid grid-cols-3 gap-6 mb-10" id="modalStats"></div>
+            <a id="modalLink" href="" target="_blank" class="block w-full text-center bg-slate-900 dark:bg-blue-600 text-white py-5 rounded-2xl font-black text-sm uppercase tracking-widest hover:shadow-xl hover:-translate-y-1 active:translate-y-0 transition-all">
+                Access Repository <i class="fas fa-external-link-alt ml-2 text-[10px]"></i>
+            </a>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
